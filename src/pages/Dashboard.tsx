@@ -142,10 +142,10 @@ const Dashboard = () => {
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
           <div className="space-y-3">
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold bg-gradient-gold bg-clip-text text-transparent leading-tight">
-              Snooker Club Dashboard
+              One Shot Snooker Dashboard
             </h1>
             <p className="text-muted-foreground text-base sm:text-lg leading-relaxed">
-              Manage your club efficiently with real-time insights
+              Manage your One Shot Snooker efficiently with real-time insights
               <span className="ml-3 text-sm text-accent flex items-center gap-2 inline-flex">
                 <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
                 Live Dashboard
