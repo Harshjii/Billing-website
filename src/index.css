@@ -1,0 +1,97 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+All colors MUST be HSL.
+*/
+
+@layer base {
+  :root {
+    --background: 0 0% 7%;
+    --foreground: 120 10% 95%;
+
+    --card: 0 0% 10%;
+    --card-foreground: 120 10% 95%;
+
+    --popover: 0 0% 10%;
+    --popover-foreground: 120 10% 95%;
+
+    --primary: 140 70% 25%;
+    --primary-foreground: 120 10% 95%;
+
+    --secondary: 0 0% 15%;
+    --secondary-foreground: 120 10% 95%;
+
+    --muted: 0 0% 15%;
+    --muted-foreground: 120 8% 60%;
+
+    --accent: 45 100% 50%;
+    --accent-foreground: 0 0% 10%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 120 10% 95%;
+
+    --success: 140 70% 45%;
+    --success-foreground: 120 10% 95%;
+
+    --border: 0 0% 20%;
+    --input: 0 0% 20%;
+    --ring: 140 70% 45%;
+
+    --radius: 0.75rem;
+
+    --gradient-primary: linear-gradient(135deg, hsl(140 70% 25%), hsl(140 60% 20%));
+    --gradient-gold: linear-gradient(135deg, hsl(45 100% 50%), hsl(40 95% 45%));
+    --shadow-glow: 0 0 40px hsl(140 70% 45% / 0.3);
+    --shadow-card: 0 10px 40px -10px hsl(0 0% 0% / 0.5);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  /* Enhanced typography */
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-semibold tracking-tight;
+  }
+
+  h1 {
+    @apply text-3xl sm:text-4xl lg:text-5xl;
+  }
+
+  h2 {
+    @apply text-2xl sm:text-3xl;
+  }
+
+  h3 {
+    @apply text-xl sm:text-2xl;
+  }
+
+  /* Better focus states for accessibility */
+  *:focus-visible {
+    @apply outline-2 outline-offset-2 outline-ring;
+  }
+
+  /* Smooth scrolling */
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* Enhanced button and interactive elements */
+  button, [role="button"] {
+    @apply transition-all duration-200 ease-in-out;
+  }
+
+  /* Better card shadows and hover effects */
+  .card-hover {
+    @apply transition-all duration-300 ease-in-out hover:shadow-lg hover:-translate-y-1;
+  }
+}
