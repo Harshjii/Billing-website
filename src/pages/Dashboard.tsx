@@ -9,10 +9,12 @@ import { RevenueChart } from "@/components/dashboard/RevenueChart";
 import { AddItemDialog } from "@/components/dashboard/AddItemDialog";
 import { EditItemDialog } from "@/components/dashboard/EditItemDialog";
 import { OwnerPasswordDialog } from "@/components/dashboard/OwnerPasswordDialog";
+import PaymentDialog from "@/components/dashboard/PaymentDialog";
 import { toast } from "sonner";
 import { useSessions } from "@/hooks/useSessions";
 import { useCategories } from "@/hooks/useCategories";
 import { useEndedSessions } from "@/hooks/useEndedSessions";
+import { usePendingPayments } from "@/hooks/usePendingPayments";
 
 interface SessionItem {
   name: string;
@@ -24,45 +26,94 @@ interface Session {
   id: string;
   table: string;
   player: string;
+  phoneNumber?: string;
   startTime: string;
+  startTimestamp?: number;
   duration: string;
   tableAmount: number;
   items: SessionItem[];
   totalAmount: number;
+  paidAmount?: number;
+  paymentStatus?: 'unpaid' | 'partial' | 'paid' | 'overdue';
+  ratePerMinute?: number;
 }
 
 const Dashboard = () => {
-   const navigate = useNavigate();
-   const { sessions: activeSessions, updateSession, deleteSession } = useSessions();
-   const { categories } = useCategories();
-   const { endedSessions, addEndedSession } = useEndedSessions();
+    const navigate = useNavigate();
+    const { sessions: activeSessions, updateSession, deleteSession } = useSessions();
+    const { categories, updateCategory } = useCategories();
+    const { endedSessions, addEndedSession } = useEndedSessions();
+    const { addPendingPayment } = usePendingPayments();
 
    const [addItemDialogOpen, setAddItemDialogOpen] = useState(false);
    const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
    const [editItemDialogOpen, setEditItemDialogOpen] = useState(false);
    const [selectedItem, setSelectedItem] = useState<{ sessionId: string; itemIndex: number; item: SessionItem } | null>(null);
    const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
+   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
+   const [selectedSessionForPayment, setSelectedSessionForPayment] = useState<Session | null>(null);
 
-  const handleEndSession = async (sessionId: string) => {
+  const handleEndSession = (sessionId: string) => {
     const session = activeSessions.find(s => s.id === sessionId);
     if (!session) return;
+
+    setSelectedSessionForPayment(session);
+    setPaymentDialogOpen(true);
+  };
+
+  const handleConfirmPayment = async (paidAmount: number) => {
+    if (!selectedSessionForPayment) return;
 
     try {
       const endTimestamp = Date.now();
       const endTime = new Date(endTimestamp).toLocaleString();
+      const session = selectedSessionForPayment;
 
-      // Save to ended sessions
-      await addEndedSession({
-        ...session,
-        endTime,
-        endTimestamp
-      });
+      // Calculate real-time total bill: table amount + items total
+      const elapsedMinutes = session.startTimestamp ?
+        Math.floor((Date.now() - session.startTimestamp) / 60000) : 0;
+      const tableAmount = elapsedMinutes * (session.ratePerMinute || 5);
+      const itemsTotal = session.items ? session.items.reduce((sum, item) => sum + (item.price * item.quantity), 0) : 0;
+      const totalBill = tableAmount + itemsTotal;
+
+      if (paidAmount >= totalBill) {
+        // Full payment - move to ended sessions
+        await addEndedSession({
+          ...session,
+          endTime,
+          endTimestamp,
+          paidAmount: totalBill,
+          pendingAmount: 0,
+          paymentStatus: 'paid'
+        });
+        toast.success(`Session completed for ${session.player} - Full payment received: ₹${totalBill}`);
+      } else {
+        // Partial payment - create pending payment
+        const pendingAmount = totalBill - paidAmount;
+        await addPendingPayment({
+          table: session.table,
+          player: session.player,
+          phoneNumber: session.phoneNumber || '',
+          startTime: session.startTime,
+          startTimestamp: session.startTimestamp,
+          endTime,
+          endTimestamp,
+          duration: session.duration,
+          tableAmount: session.tableAmount,
+          items: session.items,
+          totalAmount: totalBill,
+          paidAmount,
+          pendingAmount,
+          paymentStatus: 'partial',
+          ratePerMinute: session.ratePerMinute
+        });
+        toast.success(`Session ended for ${session.player} - Paid: ₹${paidAmount}, Pending: ₹${pendingAmount}`);
+      }
 
       // Remove from active sessions
-      await deleteSession(sessionId);
-      toast.success(`Session ended for ${session.player} - Total: ₹${session.totalAmount}. Revenue data updated in real-time.`);
+      await deleteSession(session.id);
     } catch (error) {
-      toast.error("Failed to end session: " + (error as Error).message);
+      toast.error("Failed to process payment: " + (error as Error).message);
     }
   };
 
@@ -82,6 +133,12 @@ const Dashboard = () => {
   const handleAddItem = async (categoryId: string, quantity: number) => {
     const category = categories.find(c => c.id === categoryId);
     if (!category || !selectedSessionId) return;
+
+    // Check if enough stock is available
+    if (category.quantity < quantity) {
+      toast.error(`Insufficient stock. Available: ${category.quantity}`);
+      return;
+    }
 
     const session = activeSessions.find(s => s.id === selectedSessionId);
     if (!session) return;
@@ -106,8 +163,13 @@ const Dashboard = () => {
     const totalAmount = session.tableAmount + itemsTotal;
 
     try {
+      // Update session with new items
       await updateSession(selectedSessionId, { items: updatedItems, totalAmount });
-      toast.success(`Added ${quantity}x ${category.name} to session`);
+
+      // Deduct stock from category
+      await updateCategory(categoryId, { quantity: category.quantity - quantity });
+
+      toast.success(`Added ${quantity}x ${category.name} to session. Stock remaining: ${category.quantity - quantity}`);
     } catch (error) {
       toast.error("Failed to add item: " + (error as Error).message);
     }
@@ -152,6 +214,19 @@ const Dashboard = () => {
       toast.success(`Removed ${selectedItem.item.name} from session`);
     } catch (error) {
       toast.error("Failed to remove item: " + (error as Error).message);
+    }
+  };
+
+  const handleEditPlayer = async (sessionId: string, newName: string, newPhoneNumber?: string) => {
+    try {
+      const updates: any = { player: newName };
+      if (newPhoneNumber !== undefined) {
+        updates.phoneNumber = newPhoneNumber;
+      }
+      await updateSession(sessionId, updates);
+      toast.success(`Player details updated successfully`);
+    } catch (error) {
+      toast.error("Failed to update player details: " + (error as Error).message);
     }
   };
 
@@ -234,6 +309,7 @@ const Dashboard = () => {
               onEndSession={handleEndSession}
               onAddItem={handleAddItemClick}
               onEditItem={handleEditItemClick}
+              onEditPlayer={handleEditPlayer}
             />
           </Card>
 
@@ -246,9 +322,15 @@ const Dashboard = () => {
                   New Booking
                 </Button>
               </Link>
-              <Link to="/categories">
+              <Link to="/stock">
                 <Button className="w-full min-h-[48px] text-base font-medium hover:bg-secondary/80" variant="secondary" size="lg">
-                  Manage Categories
+                  Manage Stock
+                </Button>
+              </Link>
+              <Link to="/pending-payments">
+                <Button className="w-full min-h-[48px] text-base font-medium hover:bg-secondary/80" variant="secondary" size="lg">
+                  <DollarSign className="mr-2 h-5 w-5" />
+                  Pending Payments
                 </Button>
               </Link>
               <Button className="w-full min-h-[48px] text-base font-medium hover:bg-secondary/80" variant="secondary" size="lg" onClick={handleViewRevenue}>
@@ -293,6 +375,14 @@ const Dashboard = () => {
         open={passwordDialogOpen}
         onClose={() => setPasswordDialogOpen(false)}
         onSuccess={handlePasswordSuccess}
+      />
+
+      {/* Payment Dialog */}
+      <PaymentDialog
+        open={paymentDialogOpen}
+        onClose={() => setPaymentDialogOpen(false)}
+        session={selectedSessionForPayment}
+        onConfirmPayment={handleConfirmPayment}
       />
     </div>
   );

@@ -44,7 +44,7 @@ export const EditItemDialog = ({ open, onClose, item, onEditItem, onRemoveItem }
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="bg-card border-border">
+      <DialogContent className="bg-card border-border sm:max-w-[400px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-foreground">Edit Item: {item.name}</DialogTitle>
         </DialogHeader>

@@ -12,12 +12,15 @@ export interface Session {
   id: string;
   table: string;
   player: string;
+  phoneNumber?: string;
   startTime: string;
   startTimestamp?: number; // Unix timestamp when session started
   duration: string;
   tableAmount: number;
   items: SessionItem[];
   totalAmount: number;
+  paidAmount?: number;
+  paymentStatus?: 'unpaid' | 'partial' | 'paid' | 'overdue';
   ratePerMinute?: number; // Rate per minute for time-based billing
 }
 
@@ -38,12 +41,15 @@ export const useSessions = () => {
           id: doc.id,
           table: data.table || '',
           player: data.player || '',
+          phoneNumber: data.phoneNumber || '',
           startTime: data.startTime || '',
           startTimestamp: data.startTimestamp,
           duration: data.duration || '',
           tableAmount: data.tableAmount || 0,
           items: data.items || [],
           totalAmount: data.totalAmount || 0,
+          paidAmount: data.paidAmount || 0,
+          paymentStatus: data.paymentStatus || 'unpaid',
           ratePerMinute: data.ratePerMinute || 5
         } as Session;
       });

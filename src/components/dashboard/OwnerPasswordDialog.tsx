@@ -38,7 +38,7 @@ export const OwnerPasswordDialog = ({ open, onClose, onSuccess }: OwnerPasswordD
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="bg-card border-border">
+      <DialogContent className="bg-card border-border sm:max-w-[400px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-foreground">Owner Authentication</DialogTitle>
         </DialogHeader>

@@ -1,14 +1,14 @@
 import { useState, useEffect } from 'react';
-import { collection, onSnapshot, addDoc } from 'firebase/firestore';
+import { collection, onSnapshot, addDoc, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '../firebase';
 
-export interface EndedSessionItem {
+export interface PendingPaymentItem {
   name: string;
   price: number;
   quantity: number;
 }
 
-export interface EndedSession {
+export interface PendingPayment {
   id: string;
   table: string;
   player: string;
@@ -19,16 +19,16 @@ export interface EndedSession {
   endTimestamp: number;
   duration: string;
   tableAmount: number;
-  items: EndedSessionItem[];
+  items: PendingPaymentItem[];
   totalAmount: number;
-  paidAmount?: number;
-  pendingAmount?: number;
-  paymentStatus?: 'paid' | 'partial';
+  paidAmount: number;
+  pendingAmount: number;
+  paymentStatus: 'partial' | 'overdue';
   ratePerMinute?: number;
 }
 
-export const useEndedSessions = () => {
-  const [endedSessions, setEndedSessions] = useState<EndedSession[]>([]);
+export const usePendingPayments = () => {
+  const [pendingPayments, setPendingPayments] = useState<PendingPayment[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -37,8 +37,8 @@ export const useEndedSessions = () => {
       return;
     }
 
-    const unsubscribe = onSnapshot(collection(db, 'ended_sessions'), (snapshot) => {
-      const endedSessionsData = snapshot.docs.map(doc => {
+    const unsubscribe = onSnapshot(collection(db, 'pending_payments'), (snapshot) => {
+      const pendingPaymentsData = snapshot.docs.map(doc => {
         const data = doc.data();
         return {
           id: doc.id,
@@ -55,24 +55,29 @@ export const useEndedSessions = () => {
           totalAmount: data.totalAmount || 0,
           paidAmount: data.paidAmount || 0,
           pendingAmount: data.pendingAmount || 0,
-          paymentStatus: data.paymentStatus || 'paid',
+          paymentStatus: data.paymentStatus || 'partial',
           ratePerMinute: data.ratePerMinute || 5
-        } as EndedSession;
+        } as PendingPayment;
       });
-      setEndedSessions(endedSessionsData);
+      setPendingPayments(pendingPaymentsData);
       setLoading(false);
     }, (error) => {
-      console.error('Error listening to ended sessions:', error);
+      console.error('Error listening to pending payments:', error);
       setLoading(false);
     });
 
     return unsubscribe;
   }, []);
 
-  const addEndedSession = async (session: Omit<EndedSession, 'id'>) => {
+  const addPendingPayment = async (payment: Omit<PendingPayment, 'id'>) => {
     if (!db) throw new Error('Firebase not available');
-    await addDoc(collection(db, 'ended_sessions'), session);
+    await addDoc(collection(db, 'pending_payments'), payment);
   };
 
-  return { endedSessions, loading, addEndedSession };
+  const deletePendingPayment = async (id: string) => {
+    if (!db) throw new Error('Firebase not available');
+    await deleteDoc(doc(db, 'pending_payments', id));
+  };
+
+  return { pendingPayments, loading, addPendingPayment, deletePendingPayment };
 };

@@ -6,6 +6,7 @@ export interface Category {
   id: string;
   name: string;
   price: number;
+  quantity: number;
 }
 
 export const useCategories = () => {
@@ -24,7 +25,8 @@ export const useCategories = () => {
         return {
           id: doc.id,
           name: data.name || '',
-          price: data.price || 0
+          price: data.price || 0,
+          quantity: data.quantity || 0
         } as Category;
       });
       setCategories(categoriesData);

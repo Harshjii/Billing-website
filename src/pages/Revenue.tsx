@@ -4,22 +4,36 @@ import { ArrowLeft, Download, TrendingUp, DollarSign, Clock, User, Hash, Users }
 import { Link } from "react-router-dom";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import { useEndedSessions } from "@/hooks/useEndedSessions";
+import { usePendingPayments } from "@/hooks/usePendingPayments";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useState, useEffect } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 const Revenue = () => {
-  const { endedSessions, loading } = useEndedSessions();
+  const { endedSessions, loading: endedLoading } = useEndedSessions();
+  const { pendingPayments, loading: pendingLoading } = usePendingPayments();
   const isMobile = useIsMobile();
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
 
-  // Update last updated timestamp whenever endedSessions changes
+  // Update last updated timestamp whenever data changes
   useEffect(() => {
     setLastUpdated(new Date());
-  }, [endedSessions]);
+  }, [endedSessions, pendingPayments]);
 
-  const totalRevenue = endedSessions.reduce((sum, session) => sum + session.totalAmount, 0);
-  const totalCustomers = endedSessions.length;
+  // Combine all customer sessions (both paid and pending)
+  const allCustomerSessions = [
+    ...endedSessions.map(session => ({ ...session, sessionType: 'completed' as const })),
+    ...pendingPayments.map(payment => ({
+      ...payment,
+      sessionType: 'pending' as const,
+      endTime: payment.endTime || 'Pending',
+      endTimestamp: payment.endTimestamp
+    }))
+  ].sort((a, b) => (b.endTimestamp || 0) - (a.endTimestamp || 0));
+
+  const totalRevenue = endedSessions.reduce((sum, session) => sum + (session.paidAmount || session.totalAmount), 0);
+  const totalCustomers = allCustomerSessions.length;
+  const loading = endedLoading || pendingLoading;
 
   // Group sessions by day for chart
   const sessionsByDay = endedSessions.reduce((acc, session) => {
@@ -212,23 +226,23 @@ const Revenue = () => {
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl sm:text-2xl font-semibold text-foreground">Customer Sessions</h2>
             <div className="text-sm text-muted-foreground bg-muted/50 px-3 py-1 rounded-full">
-              {endedSessions.length} sessions
+              {allCustomerSessions.length} sessions ({endedSessions.length} completed, {pendingPayments.length} pending)
             </div>
           </div>
           {loading ? (
             <div className="flex items-center justify-center py-12">
               <div className="text-muted-foreground">Loading sessions...</div>
             </div>
-          ) : endedSessions.length === 0 ? (
+          ) : allCustomerSessions.length === 0 ? (
             <div className="flex items-center justify-center py-12">
               <div className="text-muted-foreground text-center">
                 <User className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>No ended sessions yet.</p>
+                <p>No customer sessions yet.</p>
               </div>
             </div>
           ) : isMobile ? (
             <div className="space-y-4">
-              {endedSessions.map((session) => (
+              {allCustomerSessions.map((session) => (
                 <Card key={session.id} className="p-4 sm:p-5 border border-border/50 hover:border-border transition-colors">
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
@@ -246,7 +260,14 @@ const Revenue = () => {
                       </div>
                       <div className="text-right">
                         <div className="text-lg font-bold text-accent">₹{session.totalAmount}</div>
-                        <div className="text-xs text-muted-foreground">Total spent</div>
+                        <div className="text-xs text-muted-foreground">
+                          {session.sessionType === 'pending' ? 'Total bill' : 'Total spent'}
+                        </div>
+                        {session.sessionType === 'pending' && (
+                          <div className="text-xs text-red-600 font-medium">
+                            Pending: ₹{session.pendingAmount}
+                          </div>
+                        )}
                       </div>
                     </div>
                     <div className="flex items-center justify-between pt-2 border-t border-border/50">
@@ -280,11 +301,12 @@ const Revenue = () => {
                     <TableHead className="text-muted-foreground font-medium hidden md:table-cell">End Time</TableHead>
                     <TableHead className="text-muted-foreground font-medium">Duration</TableHead>
                     <TableHead className="text-muted-foreground font-medium hidden lg:table-cell">Items</TableHead>
-                    <TableHead className="text-muted-foreground font-medium">Total Spent</TableHead>
+                    <TableHead className="text-muted-foreground font-medium">Amount</TableHead>
+                    <TableHead className="text-muted-foreground font-medium">Status</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {endedSessions.map((session) => (
+                  {allCustomerSessions.map((session) => (
                     <TableRow key={session.id} className="border-border hover:bg-muted/30 transition-colors">
                       <TableCell className="font-medium text-foreground">
                         <div className="flex items-center gap-3">
@@ -316,11 +338,30 @@ const Revenue = () => {
                           <span className="text-xs">No items</span>
                         )}
                       </TableCell>
-                      <TableCell className="text-foreground font-bold text-lg">
-                        <div className="flex items-center gap-2">
-                          <DollarSign className="h-4 w-4 text-accent" />
-                          ₹{session.totalAmount}
+                      <TableCell className="text-foreground">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2 font-semibold">
+                            <DollarSign className="h-4 w-4 text-accent" />
+                            ₹{session.totalAmount}
+                          </div>
+                          {session.sessionType === 'pending' && (
+                            <div className="text-xs text-red-600">
+                              Pending: ₹{session.pendingAmount}
+                            </div>
+                          )}
                         </div>
+                      </TableCell>
+                      <TableCell>
+                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                          session.sessionType === 'completed'
+                            ? 'bg-green-100 text-green-800'
+                            : session.paymentStatus === 'overdue'
+                            ? 'bg-red-100 text-red-800'
+                            : 'bg-amber-100 text-amber-800'
+                        }`}>
+                          {session.sessionType === 'completed' ? 'Completed' :
+                           session.paymentStatus === 'overdue' ? 'Overdue' : 'Pending'}
+                        </span>
                       </TableCell>
                     </TableRow>
                   ))}

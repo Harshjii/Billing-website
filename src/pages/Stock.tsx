@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Plus, Edit, Trash2, DollarSign } from "lucide-react";
+import { ArrowLeft, Plus, Edit, Trash2, DollarSign, Package } from "lucide-react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -14,43 +14,56 @@ interface Category {
   id: string;
   name: string;
   price: number;
+  quantity: number;
 }
 
-const Categories = () => {
+const Stock = () => {
   const { categories, addCategory, updateCategory, deleteCategory } = useCategories();
   const isMobile = useIsMobile();
 
-  const [formData, setFormData] = useState({ name: "", price: "" });
+  const [formData, setFormData] = useState({ name: "", price: "", quantity: "" });
   const [editingId, setEditingId] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       if (editingId) {
-        await updateCategory(editingId, { name: formData.name, price: parseFloat(formData.price) });
-        toast.success("Category updated successfully!");
+        await updateCategory(editingId, {
+          name: formData.name,
+          price: parseFloat(formData.price),
+          quantity: parseInt(formData.quantity)
+        });
+        toast.success("Stock item updated successfully!");
         setEditingId(null);
       } else {
-        await addCategory({ name: formData.name, price: parseFloat(formData.price) });
-        toast.success("Category added successfully!");
+        await addCategory({
+          name: formData.name,
+          price: parseFloat(formData.price),
+          quantity: parseInt(formData.quantity)
+        });
+        toast.success("Stock item added successfully!");
       }
-      setFormData({ name: "", price: "" });
+      setFormData({ name: "", price: "", quantity: "" });
     } catch (error) {
-      toast.error("Failed to save category: " + (error as Error).message);
+      toast.error("Failed to save stock item: " + (error as Error).message);
     }
   };
 
   const handleEdit = (category: Category) => {
-    setFormData({ name: category.name, price: category.price.toString() });
+    setFormData({
+      name: category.name,
+      price: category.price.toString(),
+      quantity: category.quantity.toString()
+    });
     setEditingId(category.id);
   };
 
   const handleDelete = async (id: string) => {
     try {
       await deleteCategory(id);
-      toast.success("Category deleted successfully!");
+      toast.success("Stock item deleted successfully!");
     } catch (error) {
-      toast.error("Failed to delete category: " + (error as Error).message);
+      toast.error("Failed to delete stock item: " + (error as Error).message);
     }
   };
 
@@ -65,23 +78,23 @@ const Categories = () => {
         </Link>
 
         <div>
-          <h1 className="text-4xl font-bold bg-gradient-gold bg-clip-text text-transparent">
-            Manage Categories
+          <h1 className="text-2xl sm:text-4xl font-bold bg-gradient-gold bg-clip-text text-transparent">
+            Manage Stock
           </h1>
-          <p className="text-muted-foreground mt-2">Add and manage items and services</p>
+          <p className="text-muted-foreground mt-2 text-sm sm:text-base">Add and manage stock items and quantities</p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <Card className="bg-card border-border shadow-card p-6">
             <h2 className="text-xl font-semibold mb-4 text-foreground">
-              {editingId ? "Edit Category" : "Add New Category"}
+              {editingId ? "Edit Stock Item" : "Add New Stock Item"}
             </h2>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="name" className="text-foreground">Item Name</Label>
                 <Input
                   id="name"
-                  placeholder="e.g., Soft Drink"
+                  placeholder="e.g., Cold Drink"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   required
@@ -90,7 +103,7 @@ const Categories = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="price" className="text-foreground">Price (₹)</Label>
+                <Label htmlFor="price" className="text-foreground">Price per Unit (₹)</Label>
                 <Input
                   id="price"
                   type="number"
@@ -103,22 +116,36 @@ const Categories = () => {
                 />
               </div>
 
-              <Button 
-                type="submit" 
-                className="w-full bg-gradient-primary shadow-glow hover:opacity-90"
+              <div className="space-y-2">
+                <Label htmlFor="quantity" className="text-foreground">Stock Quantity</Label>
+                <Input
+                  id="quantity"
+                  type="number"
+                  min="0"
+                  placeholder="0"
+                  value={formData.quantity}
+                  onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
+                  required
+                  className="bg-secondary border-border text-foreground"
+                />
+              </div>
+
+              <Button
+                type="submit"
+                className="w-full bg-gradient-primary shadow-glow hover:opacity-90 min-h-[44px] text-base"
               >
                 <Plus className="mr-2 h-4 w-4" />
-                {editingId ? "Update Category" : "Add Category"}
+                {editingId ? "Update Stock Item" : "Add Stock Item"}
               </Button>
 
               {editingId && (
                 <Button
                   type="button"
                   variant="secondary"
-                  className="w-full"
+                  className="w-full min-h-[44px] text-base"
                   onClick={() => {
                     setEditingId(null);
-                    setFormData({ name: "", price: "" });
+                    setFormData({ name: "", price: "", quantity: "" });
                   }}
                 >
                   Cancel Edit
@@ -128,7 +155,7 @@ const Categories = () => {
           </Card>
 
           <Card className="lg:col-span-2 bg-card border-border shadow-card p-6">
-            <h2 className="text-xl font-semibold mb-4 text-foreground">Categories List</h2>
+            <h2 className="text-xl font-semibold mb-4 text-foreground">Stock Items List</h2>
             {isMobile ? (
               <div className="space-y-3">
                 {categories.map((category) => (
@@ -136,9 +163,15 @@ const Categories = () => {
                     <div className="flex items-center justify-between">
                       <div className="flex-1">
                         <h3 className="font-medium text-foreground">{category.name}</h3>
-                        <div className="flex items-center gap-1 mt-1">
-                          <DollarSign className="h-4 w-4 text-accent" />
-                          <span className="text-accent font-semibold">₹{category.price.toFixed(2)}</span>
+                        <div className="flex items-center gap-4 mt-1">
+                          <div className="flex items-center gap-1">
+                            <DollarSign className="h-4 w-4 text-accent" />
+                            <span className="text-accent font-semibold">₹{category.price.toFixed(2)}</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Package className="h-4 w-4 text-primary" />
+                            <span className="text-primary font-semibold">{category.quantity}</span>
+                          </div>
                         </div>
                       </div>
                       <div className="flex gap-2">
@@ -169,7 +202,8 @@ const Categories = () => {
                   <TableHeader>
                     <TableRow className="border-border hover:bg-muted/50">
                       <TableHead className="text-muted-foreground">Item Name</TableHead>
-                      <TableHead className="text-muted-foreground">Price</TableHead>
+                      <TableHead className="text-muted-foreground">Price per Unit</TableHead>
+                      <TableHead className="text-muted-foreground">Stock Quantity</TableHead>
                       <TableHead className="text-muted-foreground">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -178,6 +212,7 @@ const Categories = () => {
                       <TableRow key={category.id} className="border-border hover:bg-muted/50">
                         <TableCell className="font-medium text-foreground">{category.name}</TableCell>
                         <TableCell className="text-accent font-semibold">₹{category.price.toFixed(2)}</TableCell>
+                        <TableCell className="text-primary font-semibold">{category.quantity}</TableCell>
                         <TableCell>
                           <div className="flex flex-col sm:flex-row gap-2">
                             <Button
@@ -211,4 +246,4 @@ const Categories = () => {
   );
 };
 
-export default Categories;
+export default Stock;
