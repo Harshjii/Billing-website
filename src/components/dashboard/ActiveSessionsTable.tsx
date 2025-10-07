@@ -1,7 +1,7 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Clock, DollarSign, Plus, User, Hash } from "lucide-react";
+import { Clock, DollarSign, Plus, User, Hash, Edit } from "lucide-react";
 import { useTimer } from "@/hooks/useTimer";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useEffect, useState } from "react";
@@ -42,9 +42,10 @@ interface ActiveSessionsTableProps {
   sessions: Session[];
   onEndSession: (sessionId: string) => void;
   onAddItem: (sessionId: string) => void;
+  onEditItem: (sessionId: string, itemIndex: number) => void;
 }
 
-const SessionRow = ({ session, onEndSession, onAddItem }: { session: Session; onEndSession: (id: string) => void; onAddItem: (id: string) => void }) => {
+const SessionRow = ({ session, onEndSession, onAddItem, onEditItem }: { session: Session; onEndSession: (id: string) => void; onAddItem: (id: string) => void; onEditItem: (sessionId: string, itemIndex: number) => void }) => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const isMobile = useIsMobile();
   const timerData = useTimer(session.startTimestamp, session.ratePerMinute || 5);
@@ -98,8 +99,21 @@ const SessionRow = ({ session, onEndSession, onAddItem }: { session: Session; on
         </div>
 
         {(session.items && session.items.length > 0) && (
-          <div className="text-xs text-muted-foreground">
-            Items: {session.items.map(item => `${item.name} x${item.quantity}`).join(', ')}
+          <div className="text-xs text-muted-foreground space-y-1">
+            <div>Items:</div>
+            {session.items.map((item, idx) => (
+              <div key={idx} className="flex items-center justify-between">
+                <span>{item.name} x{item.quantity}</span>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-6 w-6 p-0 ml-2"
+                  onClick={() => onEditItem(session.id, idx)}
+                >
+                  <Edit className="h-3 w-3" />
+                </Button>
+              </div>
+            ))}
           </div>
         )}
 
@@ -163,8 +177,16 @@ const SessionRow = ({ session, onEndSession, onAddItem }: { session: Session; on
         {(session.items && session.items.length > 0) ? (
           <div className="space-y-1">
             {session.items.map((item, idx) => (
-              <div key={idx} className="text-xs">
-                {item.name} x{item.quantity} (₹{item.price * item.quantity})
+              <div key={idx} className="flex items-center justify-between text-xs">
+                <span>{item.name} x{item.quantity} (₹{item.price * item.quantity})</span>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-6 w-6 p-0 ml-2"
+                  onClick={() => onEditItem(session.id, idx)}
+                >
+                  <Edit className="h-3 w-3" />
+                </Button>
               </div>
             ))}
           </div>
@@ -232,7 +254,7 @@ const SessionRow = ({ session, onEndSession, onAddItem }: { session: Session; on
   );
 };
 
-export const ActiveSessionsTable = ({ sessions, onEndSession, onAddItem }: ActiveSessionsTableProps) => {
+export const ActiveSessionsTable = ({ sessions, onEndSession, onAddItem, onEditItem }: ActiveSessionsTableProps) => {
   const isMobile = useIsMobile();
 
   if (isMobile) {
@@ -244,6 +266,7 @@ export const ActiveSessionsTable = ({ sessions, onEndSession, onAddItem }: Activ
             session={session}
             onEndSession={onEndSession}
             onAddItem={onAddItem}
+            onEditItem={onEditItem}
           />
         ))}
       </div>
@@ -271,6 +294,7 @@ export const ActiveSessionsTable = ({ sessions, onEndSession, onAddItem }: Activ
               session={session}
               onEndSession={onEndSession}
               onAddItem={onAddItem}
+              onEditItem={onEditItem}
             />
           ))}
         </TableBody>

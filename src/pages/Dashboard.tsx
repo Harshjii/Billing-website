@@ -7,6 +7,7 @@ import { StatCard } from "@/components/dashboard/StatCard";
 import { ActiveSessionsTable } from "@/components/dashboard/ActiveSessionsTable";
 import { RevenueChart } from "@/components/dashboard/RevenueChart";
 import { AddItemDialog } from "@/components/dashboard/AddItemDialog";
+import { EditItemDialog } from "@/components/dashboard/EditItemDialog";
 import { OwnerPasswordDialog } from "@/components/dashboard/OwnerPasswordDialog";
 import { toast } from "sonner";
 import { useSessions } from "@/hooks/useSessions";
@@ -38,6 +39,8 @@ const Dashboard = () => {
 
    const [addItemDialogOpen, setAddItemDialogOpen] = useState(false);
    const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
+   const [editItemDialogOpen, setEditItemDialogOpen] = useState(false);
+   const [selectedItem, setSelectedItem] = useState<{ sessionId: string; itemIndex: number; item: SessionItem } | null>(null);
    const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
 
   const handleEndSession = async (sessionId: string) => {
@@ -66,6 +69,14 @@ const Dashboard = () => {
   const handleAddItemClick = (sessionId: string) => {
     setSelectedSessionId(sessionId);
     setAddItemDialogOpen(true);
+  };
+
+  const handleEditItemClick = (sessionId: string, itemIndex: number) => {
+    const session = activeSessions.find(s => s.id === sessionId);
+    if (session && session.items && session.items[itemIndex]) {
+      setSelectedItem({ sessionId, itemIndex, item: session.items[itemIndex] });
+      setEditItemDialogOpen(true);
+    }
   };
 
   const handleAddItem = async (categoryId: string, quantity: number) => {
@@ -99,6 +110,48 @@ const Dashboard = () => {
       toast.success(`Added ${quantity}x ${category.name} to session`);
     } catch (error) {
       toast.error("Failed to add item: " + (error as Error).message);
+    }
+  };
+
+  const handleEditItem = async (quantity: number) => {
+    if (!selectedItem) return;
+
+    const session = activeSessions.find(s => s.id === selectedItem.sessionId);
+    if (!session) return;
+
+    const updatedItems = [...session.items];
+    updatedItems[selectedItem.itemIndex] = {
+      ...updatedItems[selectedItem.itemIndex],
+      quantity
+    };
+
+    const itemsTotal = updatedItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    const totalAmount = session.tableAmount + itemsTotal;
+
+    try {
+      await updateSession(selectedItem.sessionId, { items: updatedItems, totalAmount });
+      toast.success(`Updated ${selectedItem.item.name} quantity to ${quantity}`);
+    } catch (error) {
+      toast.error("Failed to update item: " + (error as Error).message);
+    }
+  };
+
+  const handleRemoveItem = async () => {
+    if (!selectedItem) return;
+
+    const session = activeSessions.find(s => s.id === selectedItem.sessionId);
+    if (!session) return;
+
+    const updatedItems = session.items.filter((_, idx) => idx !== selectedItem.itemIndex);
+
+    const itemsTotal = updatedItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    const totalAmount = session.tableAmount + itemsTotal;
+
+    try {
+      await updateSession(selectedItem.sessionId, { items: updatedItems, totalAmount });
+      toast.success(`Removed ${selectedItem.item.name} from session`);
+    } catch (error) {
+      toast.error("Failed to remove item: " + (error as Error).message);
     }
   };
 
@@ -180,6 +233,7 @@ const Dashboard = () => {
               sessions={activeSessions}
               onEndSession={handleEndSession}
               onAddItem={handleAddItemClick}
+              onEditItem={handleEditItemClick}
             />
           </Card>
 
@@ -223,6 +277,15 @@ const Dashboard = () => {
         onClose={() => setAddItemDialogOpen(false)}
         categories={categories}
         onAddItem={handleAddItem}
+      />
+
+      {/* Edit Item Dialog */}
+      <EditItemDialog
+        open={editItemDialogOpen}
+        onClose={() => setEditItemDialogOpen(false)}
+        item={selectedItem?.item || null}
+        onEditItem={handleEditItem}
+        onRemoveItem={handleRemoveItem}
       />
 
       {/* Owner Password Dialog */}

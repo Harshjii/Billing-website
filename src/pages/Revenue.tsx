@@ -258,6 +258,13 @@ const Revenue = () => {
                         {session.startTime} - {session.endTime}
                       </div>
                     </div>
+                    {(session.items && session.items.length > 0) && (
+                      <div className="pt-2 border-t border-border/50">
+                        <div className="text-xs text-muted-foreground">
+                          Items: {session.items.map(item => `${item.name} x${item.quantity}`).join(', ')}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </Card>
               ))}
@@ -272,6 +279,7 @@ const Revenue = () => {
                     <TableHead className="text-muted-foreground font-medium hidden sm:table-cell">Start Time</TableHead>
                     <TableHead className="text-muted-foreground font-medium hidden md:table-cell">End Time</TableHead>
                     <TableHead className="text-muted-foreground font-medium">Duration</TableHead>
+                    <TableHead className="text-muted-foreground font-medium hidden lg:table-cell">Items</TableHead>
                     <TableHead className="text-muted-foreground font-medium">Total Spent</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -294,6 +302,19 @@ const Revenue = () => {
                           <Clock className="h-4 w-4" />
                           {session.duration}
                         </div>
+                      </TableCell>
+                      <TableCell className="text-muted-foreground hidden lg:table-cell">
+                        {(session.items && session.items.length > 0) ? (
+                          <div className="space-y-1">
+                            {session.items.map((item, idx) => (
+                              <div key={idx} className="text-xs">
+                                {item.name} x{item.quantity} (₹{item.price * item.quantity})
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-xs">No items</span>
+                        )}
                       </TableCell>
                       <TableCell className="text-foreground font-bold text-lg">
                         <div className="flex items-center gap-2">
