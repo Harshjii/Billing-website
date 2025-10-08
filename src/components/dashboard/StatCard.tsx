@@ -23,18 +23,18 @@ export const StatCard = ({ title, value, icon: Icon, trend, color }: StatCardPro
   };
 
   return (
-    <Card className="bg-card border-border shadow-card p-4 sm:p-6 card-hover group">
-      <div className="flex items-start justify-between gap-4">
-        <div className="space-y-3 flex-1 min-w-0">
-          <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide">{title}</p>
-          <p className="text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground leading-none">{value}</p>
-          <p className={`text-sm font-medium ${colorClasses[color]} flex items-center gap-1`}>
-            <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse"></span>
+    <Card className="bg-card border-border shadow-card p-3 rounded-2xl hover:shadow-xl transition-all duration-300 group hover:scale-[1.02]">
+      <div className="flex items-center justify-between gap-3">
+        <div className="space-y-2 flex-1 min-w-0">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{title}</p>
+          <p className="text-lg sm:text-xl font-bold text-foreground leading-none">{value}</p>
+          <p className={`text-xs font-medium ${colorClasses[color]} flex items-center gap-1`}>
+            <span className="w-1 h-1 rounded-full bg-current animate-pulse"></span>
             {trend}
           </p>
         </div>
-        <div className={`p-3 sm:p-4 rounded-xl ${bgClasses[color]} flex-shrink-0 border group-hover:scale-110 transition-transform duration-200`}>
-          <Icon className={`h-6 w-6 sm:h-7 sm:w-7 ${colorClasses[color]}`} />
+        <div className={`p-2 rounded-lg ${bgClasses[color]} flex-shrink-0 border group-hover:scale-110 transition-transform duration-200`}>
+          <Icon className={`h-5 w-5 sm:h-6 sm:w-6 ${colorClasses[color]}`} />
         </div>
       </div>
     </Card>

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { collection, onSnapshot, addDoc, deleteDoc, doc } from 'firebase/firestore';
-import { db } from '../firebase';
+import { db, COLLECTIONS } from '../firebase';
 
 export interface PendingPaymentItem {
   name: string;
@@ -37,7 +37,7 @@ export const usePendingPayments = () => {
       return;
     }
 
-    const unsubscribe = onSnapshot(collection(db, 'pending_payments'), (snapshot) => {
+    const unsubscribe = onSnapshot(collection(db, COLLECTIONS.PENDING_PAYMENTS), (snapshot) => {
       const pendingPaymentsData = snapshot.docs.map(doc => {
         const data = doc.data();
         return {
@@ -71,12 +71,12 @@ export const usePendingPayments = () => {
 
   const addPendingPayment = async (payment: Omit<PendingPayment, 'id'>) => {
     if (!db) throw new Error('Firebase not available');
-    await addDoc(collection(db, 'pending_payments'), payment);
+    await addDoc(collection(db, COLLECTIONS.PENDING_PAYMENTS), payment);
   };
 
   const deletePendingPayment = async (id: string) => {
     if (!db) throw new Error('Firebase not available');
-    await deleteDoc(doc(db, 'pending_payments', id));
+    await deleteDoc(doc(db, COLLECTIONS.PENDING_PAYMENTS, id));
   };
 
   return { pendingPayments, loading, addPendingPayment, deletePendingPayment };

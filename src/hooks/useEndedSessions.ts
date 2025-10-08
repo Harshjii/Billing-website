@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { collection, onSnapshot, addDoc } from 'firebase/firestore';
-import { db } from '../firebase';
+import { db, COLLECTIONS } from '../firebase';
 
 export interface EndedSessionItem {
   name: string;
@@ -37,7 +37,7 @@ export const useEndedSessions = () => {
       return;
     }
 
-    const unsubscribe = onSnapshot(collection(db, 'ended_sessions'), (snapshot) => {
+    const unsubscribe = onSnapshot(collection(db, COLLECTIONS.ENDED_SESSIONS), (snapshot) => {
       const endedSessionsData = snapshot.docs.map(doc => {
         const data = doc.data();
         return {
@@ -71,7 +71,7 @@ export const useEndedSessions = () => {
 
   const addEndedSession = async (session: Omit<EndedSession, 'id'>) => {
     if (!db) throw new Error('Firebase not available');
-    await addDoc(collection(db, 'ended_sessions'), session);
+    await addDoc(collection(db, COLLECTIONS.ENDED_SESSIONS), session);
   };
 
   return { endedSessions, loading, addEndedSession };

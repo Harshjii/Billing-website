@@ -5,30 +5,17 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, Search, Phone, MessageSquare, CheckCircle, Download, Printer, Eye, DollarSign, Clock, User } from "lucide-react";
 import { Link } from "react-router-dom";
-import { usePendingPayments } from "@/hooks/usePendingPayments";
+import { usePendingPayments, PendingPayment } from "@/hooks/usePendingPayments";
+import { useEndedSessions } from "@/hooks/useEndedSessions";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { toast } from "sonner";
 
-interface PendingPayment {
-  id: string;
-  player: string;
-  phoneNumber?: string;
-  table: string;
-  startTime: string;
-  endTime?: string;
-  startTimestamp?: number;
-  totalAmount: number;
-  paidAmount: number;
-  pendingAmount: number;
-  paymentStatus: 'unpaid' | 'partial' | 'paid' | 'overdue';
-  items: any[];
-}
-
 const PendingPayments = () => {
   const { pendingPayments, deletePendingPayment } = usePendingPayments();
+  const { addEndedSession } = useEndedSessions();
   const isMobile = useIsMobile();
   const [searchTerm, setSearchTerm] = useState("");
   const [filter, setFilter] = useState<"all" | "overdue" | "high">("all");
@@ -115,8 +102,44 @@ const PendingPayments = () => {
 
   const handleMarkPaid = async (payment: PendingPayment) => {
     try {
+      // Ensure all required fields have valid values
+      const validEndTimestamp = payment.endTimestamp || Date.now();
+      const validDuration = payment.duration || '';
+      const validTableAmount = payment.tableAmount || 0;
+      const validItems = payment.items || [];
+      const validTotalAmount = payment.totalAmount || 0;
+
+      // Build the ended session object, only including optional fields if they have values
+      const endedSessionData: any = {
+        table: payment.table || '',
+        player: payment.player || '',
+        phoneNumber: payment.phoneNumber,
+        startTime: payment.startTime || '',
+        endTime: payment.endTime || '',
+        endTimestamp: validEndTimestamp,
+        duration: validDuration,
+        tableAmount: validTableAmount,
+        items: validItems,
+        totalAmount: validTotalAmount,
+        paidAmount: validTotalAmount, // Now fully paid
+        pendingAmount: 0,
+        paymentStatus: 'paid'
+      };
+
+      // Only include optional fields if they have valid values
+      if (payment.startTimestamp !== undefined) {
+        endedSessionData.startTimestamp = payment.startTimestamp;
+      }
+      if (payment.ratePerMinute !== undefined) {
+        endedSessionData.ratePerMinute = payment.ratePerMinute;
+      }
+
+      // Add to ended sessions with full payment
+      await addEndedSession(endedSessionData);
+
+      // Remove from pending payments
       await deletePendingPayment(payment.id);
-      toast.success(`Payment marked as paid for ${payment.player} - removed from pending list`);
+      toast.success(`Payment marked as paid for ${payment.player} - moved to completed sessions`);
     } catch (error) {
       toast.error("Failed to mark payment as paid: " + (error as Error).message);
     }

@@ -1,0 +1,29 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Players collection
+    match /players/{playerId} {
+      allow read, write: if request.auth != null || true; // Allow for demo purposes
+    }
+
+    // Sessions collection
+    match /sessions/{sessionId} {
+      allow read, write: if request.auth != null || true; // Allow for demo purposes
+    }
+
+    // Ended sessions collection
+    match /ended_sessions/{sessionId} {
+      allow read, write: if request.auth != null || true; // Allow for demo purposes
+    }
+
+    // Pending payments collection
+    match /pending_payments/{paymentId} {
+      allow read, write: if request.auth != null || true; // Allow for demo purposes
+    }
+
+    // Transactions collection
+    match /transactions/{transactionId} {
+      allow read, write: if request.auth != null || true; // Allow for demo purposes
+    }
+  }
+}

@@ -5,7 +5,6 @@ import { Plus, TrendingUp, Users, DollarSign, Clock } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { ActiveSessionsTable } from "@/components/dashboard/ActiveSessionsTable";
-import { RevenueChart } from "@/components/dashboard/RevenueChart";
 import { AddItemDialog } from "@/components/dashboard/AddItemDialog";
 import { EditItemDialog } from "@/components/dashboard/EditItemDialog";
 import { OwnerPasswordDialog } from "@/components/dashboard/OwnerPasswordDialog";
@@ -76,12 +75,21 @@ const Dashboard = () => {
       const itemsTotal = session.items ? session.items.reduce((sum, item) => sum + (item.price * item.quantity), 0) : 0;
       const totalBill = tableAmount + itemsTotal;
 
+      // Calculate exact duration at end time
+      const hours = Math.floor(elapsedMinutes / 60);
+      const minutes = elapsedMinutes % 60;
+      const seconds = Math.floor(((Date.now() - session.startTimestamp) % 60000) / 1000);
+      const exactDuration = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+
       if (paidAmount >= totalBill) {
         // Full payment - move to ended sessions
         await addEndedSession({
           ...session,
           endTime,
           endTimestamp,
+          duration: exactDuration,
+          tableAmount,
+          totalAmount: totalBill,
           paidAmount: totalBill,
           pendingAmount: 0,
           paymentStatus: 'paid'
@@ -98,8 +106,8 @@ const Dashboard = () => {
           startTimestamp: session.startTimestamp,
           endTime,
           endTimestamp,
-          duration: session.duration,
-          tableAmount: session.tableAmount,
+          duration: exactDuration,
+          tableAmount,
           items: session.items,
           totalAmount: totalBill,
           paidAmount,
@@ -264,43 +272,45 @@ const Dashboard = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-background p-4 sm:p-6 lg:p-8">
+    <div className="min-h-screen bg-background p-3 sm:p-4 md:p-6 lg:p-8">
       <div className="max-w-7xl mx-auto space-y-6 sm:space-y-8">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
-          <div className="space-y-3">
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold bg-gradient-gold bg-clip-text text-transparent leading-tight">
-              One Shot Snooker Dashboard
-            </h1>
-            <p className="text-muted-foreground text-base sm:text-lg leading-relaxed">
-              Manage your One Shot Snooker efficiently with real-time insights
-              <span className="ml-3 text-sm text-accent flex items-center gap-2 inline-flex">
-                <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-                Live Dashboard
-              </span>
-            </p>
+        <div className="flex flex-col gap-4 sm:gap-6">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div className="space-y-2 sm:space-y-3">
+              <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold bg-gradient-gold bg-clip-text text-transparent leading-tight">
+                One Shot Snooker Dashboard
+              </h1>
+              <p className="text-muted-foreground text-sm sm:text-base md:text-lg leading-relaxed">
+                Manage your One Shot Snooker efficiently with real-time insights
+              </p>
+            </div>
+            <Link to="/new-booking" className="w-full sm:w-auto">
+              <Button className="w-full sm:w-auto bg-gradient-primary shadow-glow hover:shadow-xl hover:scale-105 transition-all duration-200 min-h-[44px] sm:min-h-[48px] text-sm sm:text-base font-medium" size="lg">
+                <Plus className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
+                New Booking
+              </Button>
+            </Link>
           </div>
-          <Link to="/new-booking" className="w-full sm:w-auto">
-            <Button className="w-full sm:w-auto bg-gradient-primary shadow-glow hover:shadow-xl hover:scale-105 transition-all duration-200 min-h-[48px] text-base font-medium" size="lg">
-              <Plus className="mr-2 h-5 w-5" />
-              New Booking
-            </Button>
-          </Link>
+          <div className="flex items-center gap-2 text-sm text-accent">
+            <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+            Live Dashboard
+          </div>
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           {stats.map((stat, index) => (
             <StatCard key={index} {...stat} />
           ))}
         </div>
 
-        {/* Active Sessions & Revenue Chart */}
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-          <Card className="xl:col-span-2 bg-card border-border shadow-card p-4 sm:p-6 card-hover">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl sm:text-2xl font-semibold text-foreground">Active Sessions</h2>
-              <div className="text-sm text-muted-foreground bg-muted/50 px-3 py-1 rounded-full">
+        {/* Active Sessions & Quick Actions */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+          <Card className="lg:col-span-2 bg-card border-border shadow-card p-3 sm:p-4 md:p-6 card-hover">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 sm:mb-6 gap-2">
+              <h2 className="text-lg sm:text-xl md:text-2xl font-semibold text-foreground">Active Sessions</h2>
+              <div className="text-xs sm:text-sm text-muted-foreground bg-muted/50 px-2 sm:px-3 py-1 rounded-full self-start sm:self-auto">
                 {activeSessions.length} active
               </div>
             </div>
@@ -313,9 +323,9 @@ const Dashboard = () => {
             />
           </Card>
 
-          <Card className="bg-card border-border shadow-card p-4 sm:p-6 card-hover">
-            <h2 className="text-xl sm:text-2xl font-semibold mb-6 text-foreground">Quick Actions</h2>
-            <div className="space-y-4">
+          <Card className="bg-card border-border shadow-card p-3 sm:p-4 md:p-6 card-hover">
+            <h2 className="text-lg sm:text-xl md:text-2xl font-semibold mb-4 sm:mb-6 text-foreground">Quick Actions</h2>
+            <div className="space-y-3 sm:space-y-4">
               <Link to="/new-booking">
                 <Button className="w-full bg-gradient-primary hover:bg-gradient-primary/90 shadow-glow hover:shadow-xl transition-all duration-200 min-h-[48px] text-base font-medium" size="lg">
                   <Plus className="mr-2 h-5 w-5" />
@@ -333,6 +343,12 @@ const Dashboard = () => {
                   Pending Payments
                 </Button>
               </Link>
+              <Link to="/player-accounts">
+                <Button className="w-full min-h-[48px] text-base font-medium hover:bg-secondary/80" variant="secondary" size="lg">
+                  <Users className="mr-2 h-5 w-5" />
+                  Player Accounts
+                </Button>
+              </Link>
               <Button className="w-full min-h-[48px] text-base font-medium hover:bg-secondary/80" variant="secondary" size="lg" onClick={handleViewRevenue}>
                 <TrendingUp className="mr-2 h-5 w-5" />
                 View Revenue
@@ -341,16 +357,7 @@ const Dashboard = () => {
           </Card>
         </div>
 
-        {/* Revenue Chart */}
-        <Card className="bg-card border-border shadow-card p-4 sm:p-6 card-hover">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl sm:text-2xl font-semibold text-foreground">Revenue Overview</h2>
-            <div className="text-sm text-muted-foreground bg-accent/10 px-3 py-1 rounded-full">
-              Last 7 days
-            </div>
-          </div>
-          <RevenueChart />
-        </Card>
+
       </div>
 
       {/* Add Item Dialog */}

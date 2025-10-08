@@ -8,6 +8,7 @@ import NewBooking from "./pages/NewBooking";
 import Stock from "./pages/Stock";
 import Revenue from "./pages/Revenue";
 import PendingPayments from "./pages/PendingPayments";
+import PlayerAccounts from "./pages/PlayerAccounts";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -24,6 +25,7 @@ const App = () => (
           <Route path="/stock" element={<Stock />} />
           <Route path="/revenue" element={<Revenue />} />
           <Route path="/pending-payments" element={<PendingPayments />} />
+          <Route path="/player-accounts" element={<PlayerAccounts />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

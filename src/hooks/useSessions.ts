@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
-import { db } from '../firebase';
+import { db, COLLECTIONS } from '../firebase';
 
 export interface SessionItem {
   name: string;
@@ -34,7 +34,7 @@ export const useSessions = () => {
       return;
     }
 
-    const unsubscribe = onSnapshot(collection(db, 'sessions'), (snapshot) => {
+    const unsubscribe = onSnapshot(collection(db, COLLECTIONS.SESSIONS), (snapshot) => {
       const sessionsData = snapshot.docs.map(doc => {
         const data = doc.data();
         return {
@@ -65,7 +65,7 @@ export const useSessions = () => {
 
   const addSession = async (session: Omit<Session, 'id'>) => {
     if (!db) throw new Error('Firebase not available');
-    await addDoc(collection(db, 'sessions'), session);
+    await addDoc(collection(db, COLLECTIONS.SESSIONS), session);
   };
 
   const updateSession = async (id: string, updates: Partial<Session>) => {
