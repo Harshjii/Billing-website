@@ -24,6 +24,7 @@ export interface EndedSession {
   paidAmount?: number;
   pendingAmount?: number;
   paymentStatus?: 'paid' | 'partial';
+  paymentMode?: 'cash' | 'card' | 'upi' | 'other';
   ratePerMinute?: number;
 }
 
@@ -56,6 +57,7 @@ export const useEndedSessions = () => {
           paidAmount: data.paidAmount || 0,
           pendingAmount: data.pendingAmount || 0,
           paymentStatus: data.paymentStatus || 'paid',
+          paymentMode: data.paymentMode || 'cash',
           ratePerMinute: data.ratePerMinute || 5
         } as EndedSession;
       });

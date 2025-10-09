@@ -12,6 +12,7 @@ export interface Transaction {
   paidAmount?: number;
   status: 'paid' | 'partial' | 'pending';
   paymentMethod?: string;
+  paymentMode?: 'cash' | 'card' | 'upi' | 'other';
   table?: string;
   startTime?: string;
   duration?: string;
@@ -56,6 +57,7 @@ export const usePlayerTransactions = (playerName: string) => {
         amount: session.totalAmount,
         paidAmount: 0,
         status: 'pending',
+        paymentMode: session.paymentMode,
         table: session.table,
         startTime: session.startTime,
         duration: duration,
@@ -75,6 +77,7 @@ export const usePlayerTransactions = (playerName: string) => {
           amount: session.totalAmount,
           paidAmount: session.paidAmount || session.totalAmount,
           status: session.paymentStatus === 'paid' ? 'paid' : session.paymentStatus === 'partial' ? 'partial' : 'pending',
+          paymentMode: session.paymentMode,
           table: session.table,
           startTime: session.startTime,
           duration: session.duration,
@@ -94,6 +97,7 @@ export const usePlayerTransactions = (playerName: string) => {
           amount: payment.totalAmount,
           paidAmount: payment.paidAmount || 0,
           status: payment.paymentStatus === 'partial' ? 'partial' : 'pending',
+          paymentMode: payment.paymentMode,
           table: payment.table,
           startTime: payment.startTime,
           duration: payment.duration,

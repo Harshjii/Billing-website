@@ -1041,9 +1041,14 @@ const PlayerDetails = ({ player }: { player: Player }) => {
                             Table: ₹{costBreakdown.tableCost.toLocaleString()} + Items: ₹{costBreakdown.itemsCost.toLocaleString()}
                           </div>
                         )}
+                        {transaction.paymentMode && (
+                          <p className="text-xs text-muted-foreground capitalize mt-1">
+                            Payment: {transaction.paymentMode.toUpperCase()}
+                          </p>
+                        )}
                         {transaction.paymentMethod && (
                           <p className="text-xs text-muted-foreground capitalize mt-1">
-                            {transaction.paymentMethod.replace('_', ' ')}
+                            Method: {transaction.paymentMethod.replace('_', ' ')}
                           </p>
                         )}
                       </div>
@@ -1112,7 +1117,7 @@ const PlayerDetails = ({ player }: { player: Player }) => {
                     <TableHead>Duration</TableHead>
                     <TableHead>Amount</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead>Payment Method</TableHead>
+                    <TableHead>Payment Mode</TableHead>
                     <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -1156,7 +1161,9 @@ const PlayerDetails = ({ player }: { player: Player }) => {
                             {transaction.status}
                           </Badge>
                         </TableCell>
-                        <TableCell>{transaction.paymentMethod || '-'}</TableCell>
+                        <TableCell>
+                          {transaction.paymentMode ? transaction.paymentMode.toUpperCase() : '-'}
+                        </TableCell>
                         <TableCell>
                           <div className="flex gap-2">
                             <Button
@@ -1197,7 +1204,7 @@ const PlayerDetails = ({ player }: { player: Player }) => {
                       <TableCell className="font-bold text-lg">
                         ₹{filteredTransactions.reduce((sum, t) => sum + t.amount, 0).toLocaleString()}
                       </TableCell>
-                      <TableCell colSpan={3}></TableCell>
+                      <TableCell colSpan={4}></TableCell>
                     </TableRow>
                   )}
                 </TableBody>

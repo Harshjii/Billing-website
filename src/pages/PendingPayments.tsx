@@ -2,16 +2,20 @@ import { useState, useMemo } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Search, Phone, MessageSquare, CheckCircle, Download, Printer, Eye, DollarSign, Clock, User } from "lucide-react";
+import { ArrowLeft, Search, Phone, MessageSquare, CheckCircle, Download, Printer, Eye, DollarSign, Clock, User, CreditCard, Edit } from "lucide-react";
 import { Link } from "react-router-dom";
 import { usePendingPayments, PendingPayment } from "@/hooks/usePendingPayments";
-import { useEndedSessions } from "@/hooks/useEndedSessions";
+import { useEndedSessions, EndedSession } from "@/hooks/useEndedSessions";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { updateDoc, doc } from "firebase/firestore";
+import { db, COLLECTIONS } from "@/firebase";
 
 const PendingPayments = () => {
   const { pendingPayments, deletePendingPayment } = usePendingPayments();
@@ -21,6 +25,9 @@ const PendingPayments = () => {
   const [filter, setFilter] = useState<"all" | "overdue" | "high">("all");
   const [sortBy, setSortBy] = useState<"amount" | "date" | "player">("amount");
   const [selectedPayment, setSelectedPayment] = useState<PendingPayment | null>(null);
+  const [paymentModeDialogOpen, setPaymentModeDialogOpen] = useState(false);
+  const [editingPayment, setEditingPayment] = useState<PendingPayment | null>(null);
+  const [newPaymentMode, setNewPaymentMode] = useState<'cash' | 'card' | 'upi' | 'other'>('cash');
 
   // Process pending payments data
   const processedPendingPayments = useMemo(() => {
@@ -43,6 +50,7 @@ const PendingPayments = () => {
         paidAmount: payment.paidAmount,
         pendingAmount: payment.pendingAmount,
         paymentStatus,
+        paymentMode: payment.paymentMode,
         items: payment.items || []
       } as PendingPayment;
     });
@@ -50,7 +58,7 @@ const PendingPayments = () => {
 
   // Filter and sort payments
   const filteredAndSortedPayments = useMemo(() => {
-    let filtered = processedPendingPayments.filter(payment => {
+    const filtered = processedPendingPayments.filter(payment => {
       const matchesSearch = payment.player.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           payment.table.toLowerCase().includes(searchTerm.toLowerCase());
 
@@ -110,7 +118,7 @@ const PendingPayments = () => {
       const validTotalAmount = payment.totalAmount || 0;
 
       // Build the ended session object, only including optional fields if they have values
-      const endedSessionData: any = {
+      const endedSessionData: Partial<EndedSession> = {
         table: payment.table || '',
         player: payment.player || '',
         phoneNumber: payment.phoneNumber,
@@ -133,6 +141,9 @@ const PendingPayments = () => {
       if (payment.ratePerMinute !== undefined) {
         endedSessionData.ratePerMinute = payment.ratePerMinute;
       }
+      if (payment.paymentMode !== undefined) {
+        endedSessionData.paymentMode = payment.paymentMode;
+      }
 
       // Add to ended sessions with full payment
       await addEndedSession(endedSessionData);
@@ -145,9 +156,32 @@ const PendingPayments = () => {
     }
   };
 
+  const handleUpdatePaymentMode = async () => {
+    if (!editingPayment) return;
+
+    try {
+      // Update the payment mode in Firebase
+      await updateDoc(doc(db, COLLECTIONS.PENDING_PAYMENTS, editingPayment.id), {
+        paymentMode: newPaymentMode
+      });
+
+      toast.success(`Payment mode updated to ${newPaymentMode.toUpperCase()} for ${editingPayment.player}`);
+      setPaymentModeDialogOpen(false);
+      setEditingPayment(null);
+    } catch (error) {
+      toast.error("Failed to update payment mode: " + (error as Error).message);
+    }
+  };
+
+  const openPaymentModeDialog = (payment: PendingPayment) => {
+    setEditingPayment(payment);
+    setNewPaymentMode(payment.paymentMode || 'cash');
+    setPaymentModeDialogOpen(true);
+  };
+
   const exportCSV = () => {
     const csvContent = [
-      ["Player", "Phone", "Table", "Start Time", "End Time", "Total Amount", "Paid Amount", "Pending Amount", "Status"],
+      ["Player", "Phone", "Table", "Start Time", "End Time", "Total Amount", "Paid Amount", "Pending Amount", "Payment Mode", "Status"],
       ...filteredAndSortedPayments.map(p => [
         p.player,
         p.phoneNumber || "",
@@ -157,6 +191,7 @@ const PendingPayments = () => {
         p.totalAmount,
         p.paidAmount,
         p.pendingAmount,
+        p.paymentMode || "CASH",
         p.paymentStatus
       ])
     ].map(row => row.join(",")).join("\n");
@@ -278,7 +313,7 @@ const PendingPayments = () => {
               </div>
             </div>
             <div className="flex flex-col sm:flex-row gap-3">
-              <Select value={filter} onValueChange={(value: any) => setFilter(value)}>
+              <Select value={filter} onValueChange={(value: "all" | "overdue" | "high") => setFilter(value)}>
                 <SelectTrigger className="w-full xs:flex-1 sm:w-[180px] min-h-[44px]">
                   <SelectValue placeholder="Filter" />
                 </SelectTrigger>
@@ -288,7 +323,7 @@ const PendingPayments = () => {
                   <SelectItem value="high">{">"} ₹500</SelectItem>
                 </SelectContent>
               </Select>
-              <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
+              <Select value={sortBy} onValueChange={(value: "amount" | "date" | "player") => setSortBy(value)}>
                 <SelectTrigger className="w-full xs:flex-1 sm:w-[180px] min-h-[44px]">
                   <SelectValue placeholder="Sort by" />
                 </SelectTrigger>
@@ -351,6 +386,10 @@ const PendingPayments = () => {
                           <div className="text-xl sm:text-2xl font-bold text-red-600">₹{payment.pendingAmount.toLocaleString()}</div>
                           <div className="text-xs text-muted-foreground">of ₹{payment.totalAmount.toLocaleString()}</div>
                         </div>
+                      </div>
+                      <div className="flex items-center justify-between mt-2 pt-2 border-t border-red-200 dark:border-red-800">
+                        <div className="text-xs text-muted-foreground">Payment Mode</div>
+                        <div className="text-sm font-medium">{payment.paymentMode ? payment.paymentMode.toUpperCase() : 'CASH'}</div>
                       </div>
                     </div>
 
@@ -436,6 +475,10 @@ const PendingPayments = () => {
                                     <span>Pending:</span>
                                     <span className="text-red-600">₹{selectedPayment.pendingAmount.toLocaleString()}</span>
                                   </div>
+                                  <div className="flex justify-between text-sm">
+                                    <span>Payment Mode:</span>
+                                    <span className="font-medium">{selectedPayment.paymentMode ? selectedPayment.paymentMode.toUpperCase() : 'CASH'}</span>
+                                  </div>
                                 </div>
                                 {selectedPayment.items.length > 0 && (
                                   <div className="space-y-3">
@@ -460,6 +503,15 @@ const PendingPayments = () => {
                       </Sheet>
                       <Button
                         size="sm"
+                        variant="outline"
+                        onClick={() => openPaymentModeDialog(payment)}
+                        className="min-h-[44px] text-sm font-medium"
+                      >
+                        <Edit className="h-4 w-4 mr-2" />
+                        Edit Mode
+                      </Button>
+                      <Button
+                        size="sm"
                         onClick={() => handleMarkPaid(payment)}
                         className="min-h-[44px] text-sm font-medium bg-green-600 hover:bg-green-700 active:bg-green-800"
                       >
@@ -482,6 +534,7 @@ const PendingPayments = () => {
                     <TableHead className="text-muted-foreground font-medium min-w-[80px] hidden sm:table-cell">Total</TableHead>
                     <TableHead className="text-muted-foreground font-medium min-w-[80px] hidden sm:table-cell">Paid</TableHead>
                     <TableHead className="text-muted-foreground font-medium min-w-[90px]">Pending</TableHead>
+                    <TableHead className="text-muted-foreground font-medium min-w-[80px] hidden md:table-cell">Payment Mode</TableHead>
                     <TableHead className="text-muted-foreground font-medium min-w-[80px]">Status</TableHead>
                     <TableHead className="text-muted-foreground font-medium min-w-[140px]">Actions</TableHead>
                   </TableRow>
@@ -505,6 +558,9 @@ const PendingPayments = () => {
                       <TableCell className="text-foreground hidden sm:table-cell">₹{payment.totalAmount.toLocaleString()}</TableCell>
                       <TableCell className="text-foreground hidden sm:table-cell">₹{payment.paidAmount.toLocaleString()}</TableCell>
                       <TableCell className="text-foreground font-bold text-red-600">₹{payment.pendingAmount.toLocaleString()}</TableCell>
+                      <TableCell className="text-muted-foreground hidden md:table-cell">
+                        {payment.paymentMode ? payment.paymentMode.toUpperCase() : 'CASH'}
+                      </TableCell>
                       <TableCell>
                         <Badge className={`${getStatusColor(payment.paymentStatus)} text-xs`}>
                           {payment.paymentStatus}
@@ -616,6 +672,15 @@ const PendingPayments = () => {
                           </Sheet>
                           <Button
                             size="sm"
+                            variant="outline"
+                            onClick={() => openPaymentModeDialog(payment)}
+                            className="h-8 w-8 p-0 sm:h-9 sm:w-auto sm:p-2"
+                          >
+                            <Edit className="h-3 w-3 sm:h-4 sm:w-4" />
+                            <span className="sr-only sm:not-sr-only sm:ml-1">Edit Mode</span>
+                          </Button>
+                          <Button
+                            size="sm"
                             onClick={() => handleMarkPaid(payment)}
                             className="h-8 w-8 p-0 sm:h-9 sm:w-auto sm:p-2 bg-green-600 hover:bg-green-700"
                           >
@@ -632,6 +697,54 @@ const PendingPayments = () => {
           )}
         </Card>
       </div>
+
+      {/* Payment Mode Edit Dialog */}
+      <Dialog open={paymentModeDialogOpen} onOpenChange={setPaymentModeDialogOpen}>
+        <DialogContent className="bg-card border-border sm:max-w-[400px] mx-4">
+          <DialogHeader>
+            <DialogTitle className="text-foreground text-base sm:text-lg flex items-center gap-2">
+              <CreditCard className="h-5 w-5" />
+              Edit Payment Mode
+            </DialogTitle>
+            <DialogDescription>
+              Update the payment mode for {editingPayment?.player}'s pending payment
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 sm:space-y-6">
+            <div className="space-y-2">
+              <Label htmlFor="edit-payment-mode" className="text-foreground text-sm">
+                Payment Mode
+              </Label>
+              <Select value={newPaymentMode} onValueChange={(value: 'cash' | 'card' | 'upi' | 'other') => setNewPaymentMode(value)}>
+                <SelectTrigger className="bg-secondary border-border text-foreground min-h-[44px]">
+                  <SelectValue placeholder="Select payment mode" />
+                </SelectTrigger>
+                <SelectContent className="bg-popover border-border">
+                  <SelectItem value="cash">Cash</SelectItem>
+                  <SelectItem value="card">Card</SelectItem>
+                  <SelectItem value="upi">UPI</SelectItem>
+                  <SelectItem value="other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex gap-2 justify-end pt-2">
+              <Button
+                variant="secondary"
+                onClick={() => setPaymentModeDialogOpen(false)}
+                className="min-h-[40px] px-4 text-sm"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleUpdatePaymentMode}
+                className="bg-blue-600 hover:bg-blue-700 min-h-[40px] px-4 text-sm"
+              >
+                Update Mode
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

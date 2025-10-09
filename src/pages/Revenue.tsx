@@ -130,6 +130,7 @@ const Revenue = () => {
                     <TableHead className="text-muted-foreground font-medium text-xs sm:text-sm">Duration</TableHead>
                     <TableHead className="text-muted-foreground font-medium text-xs sm:text-sm hidden lg:table-cell">Items</TableHead>
                     <TableHead className="text-muted-foreground font-medium text-xs sm:text-sm">Amount</TableHead>
+                    <TableHead className="text-muted-foreground font-medium text-xs sm:text-sm hidden md:table-cell">Payment Mode</TableHead>
                     <TableHead className="text-muted-foreground font-medium text-xs sm:text-sm">Status</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -178,6 +179,9 @@ const Revenue = () => {
                             </div>
                           )}
                         </div>
+                      </TableCell>
+                      <TableCell className="text-muted-foreground text-xs sm:text-sm hidden md:table-cell">
+                        {session.paymentMode ? session.paymentMode.toUpperCase() : 'CASH'}
                       </TableCell>
                       <TableCell className="text-xs sm:text-sm">
                         <span className={`inline-flex items-center px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full text-xs font-medium ${

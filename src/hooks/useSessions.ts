@@ -21,6 +21,7 @@ export interface Session {
   totalAmount: number;
   paidAmount?: number;
   paymentStatus?: 'unpaid' | 'partial' | 'paid' | 'overdue';
+  paymentMode?: 'cash' | 'card' | 'upi' | 'other';
   ratePerMinute?: number; // Rate per minute for time-based billing
 }
 
@@ -50,6 +51,7 @@ export const useSessions = () => {
           totalAmount: data.totalAmount || 0,
           paidAmount: data.paidAmount || 0,
           paymentStatus: data.paymentStatus || 'unpaid',
+          paymentMode: data.paymentMode || 'cash',
           ratePerMinute: data.ratePerMinute || 5
         } as Session;
       });

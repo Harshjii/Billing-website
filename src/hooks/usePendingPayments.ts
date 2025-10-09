@@ -24,6 +24,7 @@ export interface PendingPayment {
   paidAmount: number;
   pendingAmount: number;
   paymentStatus: 'partial' | 'overdue';
+  paymentMode?: 'cash' | 'card' | 'upi' | 'other';
   ratePerMinute?: number;
 }
 
@@ -56,6 +57,7 @@ export const usePendingPayments = () => {
           paidAmount: data.paidAmount || 0,
           pendingAmount: data.pendingAmount || 0,
           paymentStatus: data.paymentStatus || 'partial',
+          paymentMode: data.paymentMode || 'cash',
           ratePerMinute: data.ratePerMinute || 5
         } as PendingPayment;
       });

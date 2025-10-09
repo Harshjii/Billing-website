@@ -1,7 +1,7 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Clock, DollarSign, Plus, User, Hash, Edit } from "lucide-react";
+import { Clock, DollarSign, Plus, User, Hash, Edit, CreditCard } from "lucide-react";
 import { useTimer } from "@/hooks/useTimer";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useEffect, useState } from "react";
@@ -39,6 +39,7 @@ interface Session {
   totalAmount: number;
   paidAmount?: number;
   paymentStatus?: 'unpaid' | 'partial' | 'paid' | 'overdue';
+  paymentMode?: 'cash' | 'card' | 'upi' | 'other';
   ratePerMinute?: number;
 }
 
@@ -120,6 +121,10 @@ const SessionRow = ({ session, onEndSession, onAddItem, onEditItem, onEditPlayer
                 <div className="flex items-center gap-1 font-semibold text-accent">
                   <DollarSign className="h-4 w-4" />
                   ₹{realTimeTotal}
+                </div>
+                <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                  <CreditCard className="h-3 w-3" />
+                  {session.paymentMode ? session.paymentMode.toUpperCase() : 'CASH'}
                 </div>
               </div>
             </div>
@@ -246,6 +251,12 @@ const SessionRow = ({ session, onEndSession, onAddItem, onEditItem, onEditPlayer
               </div>
             </div>
           </TableCell>
+          <TableCell className="text-muted-foreground hidden sm:table-cell">
+            <div className="flex items-center gap-1">
+              <CreditCard className="h-4 w-4" />
+              {session.paymentMode ? session.paymentMode.toUpperCase() : 'CASH'}
+            </div>
+          </TableCell>
           <TableCell>
             <div className="flex flex-col sm:flex-row gap-2">
               <Button
@@ -336,6 +347,7 @@ export const ActiveSessionsTable = ({ sessions, onEndSession, onAddItem, onEditI
             <TableHead className="text-muted-foreground">Duration</TableHead>
             <TableHead className="text-muted-foreground hidden md:table-cell">Items</TableHead>
             <TableHead className="text-muted-foreground">Total Amount</TableHead>
+            <TableHead className="text-muted-foreground hidden sm:table-cell">Payment Mode</TableHead>
             <TableHead className="text-muted-foreground">Actions</TableHead>
           </TableRow>
         </TableHeader>

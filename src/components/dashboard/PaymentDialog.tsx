@@ -3,8 +3,9 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { DollarSign, User, Hash, Clock } from "lucide-react";
+import { DollarSign, User, Hash, Clock, CreditCard } from "lucide-react";
 
 interface SessionItem {
   name: string;
@@ -25,6 +26,7 @@ interface Session {
   totalAmount: number;
   paidAmount?: number;
   paymentStatus?: 'unpaid' | 'partial' | 'paid' | 'overdue';
+  paymentMode?: 'cash' | 'card' | 'upi' | 'other';
   ratePerMinute?: number;
 }
 
@@ -32,16 +34,18 @@ interface PaymentDialogProps {
   open: boolean;
   onClose: () => void;
   session: Session | null;
-  onConfirmPayment: (paidAmount: number) => void;
+  onConfirmPayment: (paidAmount: number, paymentMode: 'cash' | 'card' | 'upi' | 'other') => void;
 }
 
 const PaymentDialog = ({ open, onClose, session, onConfirmPayment }: PaymentDialogProps) => {
   const [paymentAmount, setPaymentAmount] = useState("");
+  const [paymentMode, setPaymentMode] = useState<'cash' | 'card' | 'upi' | 'other'>('cash');
 
   useEffect(() => {
     if (open && session) {
       // Pre-fill with any existing paid amount
       setPaymentAmount(session.paidAmount?.toString() || "");
+      setPaymentMode(session.paymentMode || 'cash');
     }
   }, [open, session]);
 
@@ -60,13 +64,15 @@ const PaymentDialog = ({ open, onClose, session, onConfirmPayment }: PaymentDial
     const amount = parseFloat(paymentAmount) || 0;
     if (amount < 0) return;
 
-    onConfirmPayment(amount);
+    onConfirmPayment(amount, paymentMode);
     setPaymentAmount("");
+    setPaymentMode('cash');
     onClose();
   };
 
   const handleCancel = () => {
     setPaymentAmount("");
+    setPaymentMode('cash');
     onClose();
   };
 
@@ -129,6 +135,25 @@ const PaymentDialog = ({ open, onClose, session, onConfirmPayment }: PaymentDial
               step="0.01"
               className="text-lg"
             />
+          </div>
+
+          {/* Payment Mode Selection */}
+          <div className="space-y-2">
+            <Label htmlFor="paymentMode" className="flex items-center gap-2">
+              <CreditCard className="h-4 w-4 text-primary" />
+              Payment Mode
+            </Label>
+            <Select value={paymentMode} onValueChange={(value: any) => setPaymentMode(value)}>
+              <SelectTrigger className="bg-secondary border-border text-foreground">
+                <SelectValue placeholder="Select payment mode" />
+              </SelectTrigger>
+              <SelectContent className="bg-popover border-border">
+                <SelectItem value="cash">Cash</SelectItem>
+                <SelectItem value="card">Card</SelectItem>
+                <SelectItem value="upi">UPI</SelectItem>
+                <SelectItem value="other">Other</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Items Details */}

@@ -60,7 +60,7 @@ const Dashboard = () => {
     setPaymentDialogOpen(true);
   };
 
-  const handleConfirmPayment = async (paidAmount: number) => {
+  const handleConfirmPayment = async (paidAmount: number, paymentMode: 'cash' | 'card' | 'upi' | 'other') => {
     if (!selectedSessionForPayment) return;
 
     try {
@@ -92,7 +92,8 @@ const Dashboard = () => {
           totalAmount: totalBill,
           paidAmount: totalBill,
           pendingAmount: 0,
-          paymentStatus: 'paid'
+          paymentStatus: 'paid',
+          paymentMode
         });
         toast.success(`Session completed for ${session.player} - Full payment received: ₹${totalBill}`);
       } else {
@@ -113,6 +114,7 @@ const Dashboard = () => {
           paidAmount,
           pendingAmount,
           paymentStatus: 'partial',
+          paymentMode,
           ratePerMinute: session.ratePerMinute
         });
         toast.success(`Session ended for ${session.player} - Paid: ₹${paidAmount}, Pending: ₹${pendingAmount}`);

@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Clock, User, Hash } from "lucide-react";
+import { ArrowLeft, Clock, User, Hash, CreditCard } from "lucide-react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { useSessions } from "@/hooks/useSessions";
@@ -20,6 +20,7 @@ const NewBooking = () => {
     tableNumber: "",
     rate: "5",
     startTime: "",
+    paymentMode: "cash" as 'cash' | 'card' | 'upi' | 'other',
   });
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [filteredPlayers, setFilteredPlayers] = useState<string[]>([]);
@@ -108,6 +109,7 @@ const NewBooking = () => {
       tableAmount: 0,
       items: [],
       totalAmount: 0,
+      paymentMode: formData.paymentMode,
       ratePerMinute: rate
     };
     try {
@@ -223,6 +225,28 @@ const NewBooking = () => {
                 required
                 className="bg-secondary border-border text-foreground min-h-[44px]"
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="paymentMode" className="text-foreground flex items-center gap-2">
+                <CreditCard className="h-4 w-4 text-primary" />
+                Payment Mode
+              </Label>
+              <Select
+                value={formData.paymentMode}
+                onValueChange={(value) => setFormData({ ...formData, paymentMode: value as 'cash' | 'card' | 'upi' | 'other' })}
+                required
+              >
+                <SelectTrigger className="bg-secondary border-border text-foreground min-h-[44px]">
+                  <SelectValue placeholder="Select payment mode" />
+                </SelectTrigger>
+                <SelectContent className="bg-popover border-border">
+                  <SelectItem value="cash">Cash</SelectItem>
+                  <SelectItem value="card">Card</SelectItem>
+                  <SelectItem value="upi">UPI</SelectItem>
+                  <SelectItem value="other">Other</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="pt-4 space-y-3">
