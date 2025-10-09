@@ -46,12 +46,16 @@ const PendingPayments = () => {
         startTime: payment.startTime,
         endTime: payment.endTime,
         startTimestamp: payment.startTimestamp,
+        endTimestamp: payment.endTimestamp,
+        duration: payment.duration,
+        tableAmount: payment.tableAmount,
         totalAmount: payment.totalAmount,
         paidAmount: payment.paidAmount,
         pendingAmount: payment.pendingAmount,
         paymentStatus,
         paymentMode: payment.paymentMode,
-        items: payment.items || []
+        items: payment.items || [],
+        ratePerMinute: payment.ratePerMinute
       } as PendingPayment;
     });
   }, [pendingPayments]);

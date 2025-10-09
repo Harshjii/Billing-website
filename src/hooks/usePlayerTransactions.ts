@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useSessions } from './useSessions';
 import { useEndedSessions } from './useEndedSessions';
 import { usePendingPayments } from './usePendingPayments';
@@ -27,7 +27,7 @@ export const usePlayerTransactions = (playerName: string) => {
   const [loading, setLoading] = useState(true);
   const hasActiveSessionsRef = useRef(false);
 
-  const updateTransactions = () => {
+  const updateTransactions = useCallback(() => {
     const playerTransactions: Transaction[] = [];
 
     // Check if player has active sessions
@@ -109,7 +109,7 @@ export const usePlayerTransactions = (playerName: string) => {
     playerTransactions.sort((a, b) => b.date - a.date);
 
     setTransactions(playerTransactions);
-  };
+  }, [sessions, endedSessions, pendingPayments, playerName]);
 
   useEffect(() => {
     updateTransactions();
@@ -123,7 +123,7 @@ export const usePlayerTransactions = (playerName: string) => {
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [sessions, endedSessions, pendingPayments, playerName]);
+  }, [sessions, endedSessions, pendingPayments, playerName, updateTransactions]);
 
   const getTotals = () => {
     const totalSpent = transactions.reduce((sum, t) => sum + t.amount, 0);
