@@ -143,7 +143,7 @@ const PaymentDialog = ({ open, onClose, session, onConfirmPayment }: PaymentDial
               <CreditCard className="h-4 w-4 text-primary" />
               Payment Mode
             </Label>
-            <Select value={paymentMode} onValueChange={(value: any) => setPaymentMode(value)}>
+            <Select value={paymentMode} onValueChange={(value) => setPaymentMode(value as 'cash' | 'card' | 'upi' | 'other')}>
               <SelectTrigger className="bg-secondary border-border text-foreground">
                 <SelectValue placeholder="Select payment mode" />
               </SelectTrigger>

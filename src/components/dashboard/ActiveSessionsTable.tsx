@@ -78,7 +78,7 @@ const SessionRow = ({ session, onEndSession, onAddItem, onEditItem, onEditPlayer
     }, 30000); // Update every 30 seconds
 
     return () => clearInterval(updateInterval);
-  }, [session.id, timerData.calculatedAmount, realTimeTotal, timerData.formattedTime]);
+  }, [session.id, session.startTimestamp, timerData.calculatedAmount, realTimeTotal, timerData.formattedTime]);
 
   return (
     <>

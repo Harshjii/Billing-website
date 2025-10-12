@@ -1,6 +1,6 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Download, TrendingUp, DollarSign, Clock, User, Hash, Users } from "lucide-react";
+import { ArrowLeft, Download, DollarSign, Clock, User, Hash, Users } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useEndedSessions } from "@/hooks/useEndedSessions";
 import { usePendingPayments } from "@/hooks/usePendingPayments";
@@ -28,8 +28,6 @@ const Revenue = () => {
     }))
   ].sort((a, b) => (b.endTimestamp || 0) - (a.endTimestamp || 0));
 
-  const totalRevenue = endedSessions.reduce((sum, session) => sum + (session.paidAmount || session.totalAmount), 0);
-  const totalCustomers = allCustomerSessions.length;
   const loading = endedLoading || pendingLoading;
 
 
@@ -63,42 +61,6 @@ const Revenue = () => {
             Live • Updated: {lastUpdated.toLocaleTimeString()}
           </div>
         </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-          <Card className="bg-card border-border shadow-card p-4 sm:p-6 card-hover">
-            <div className="flex items-start justify-between mb-4">
-              <div className="space-y-2">
-                <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Total Weekly Revenue</p>
-                <p className="text-2xl sm:text-3xl font-bold text-foreground">${totalRevenue.toLocaleString()}</p>
-                <p className="text-sm text-success font-medium flex items-center gap-1">
-                  <TrendingUp className="h-4 w-4" />
-                  +15.3% from last week
-                </p>
-              </div>
-              <div className="p-3 sm:p-4 rounded-xl bg-gradient-to-br from-accent/20 to-accent/10 border border-accent/20">
-                <DollarSign className="h-6 w-6 sm:h-7 sm:w-7 text-accent" />
-              </div>
-            </div>
-          </Card>
-
-          <Card className="bg-card border-border shadow-card p-4 sm:p-6 card-hover">
-            <div className="flex items-start justify-between mb-4">
-              <div className="space-y-2">
-                <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Total Customers</p>
-                <p className="text-2xl sm:text-3xl font-bold text-foreground">{totalCustomers}</p>
-                <p className="text-sm text-success font-medium flex items-center gap-1">
-                  <Users className="h-4 w-4" />
-                  +8 from last week
-                </p>
-              </div>
-              <div className="p-3 sm:p-4 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 border border-primary/20">
-                <TrendingUp className="h-6 w-6 sm:h-7 sm:w-7 text-primary" />
-              </div>
-            </div>
-          </Card>
-        </div>
-
-
 
         <Card className="bg-card border-border shadow-card p-3 sm:p-4 md:p-6 card-hover">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 sm:mb-6 gap-2">

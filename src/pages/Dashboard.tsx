@@ -1,9 +1,8 @@
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, TrendingUp, Users, DollarSign, Clock } from "lucide-react";
+import { Plus, TrendingUp, Users, DollarSign } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
-import { StatCard } from "@/components/dashboard/StatCard";
 import { ActiveSessionsTable } from "@/components/dashboard/ActiveSessionsTable";
 import { AddItemDialog } from "@/components/dashboard/AddItemDialog";
 import { EditItemDialog } from "@/components/dashboard/EditItemDialog";
@@ -229,7 +228,7 @@ const Dashboard = () => {
 
   const handleEditPlayer = async (sessionId: string, newName: string, newPhoneNumber?: string) => {
     try {
-      const updates: any = { player: newName };
+      const updates: Partial<Session> = { player: newName };
       if (newPhoneNumber !== undefined) {
         updates.phoneNumber = newPhoneNumber;
       }
@@ -247,31 +246,6 @@ const Dashboard = () => {
   const handlePasswordSuccess = () => {
     navigate('/revenue');
   };
-
-  // Calculate real-time stats
-  const todayRevenue = endedSessions.reduce((sum, session) => sum + session.totalAmount, 0);
-  const activeTables = activeSessions.length;
-  const totalTables = 4; // Assuming 4 tables total
-  const customersToday = endedSessions.length;
-  const avgSessionTime = endedSessions.length > 0
-    ? Math.round(endedSessions.reduce((sum, session) => {
-        const duration = parseFloat(session.duration.split(' ')[0]) || 0;
-        return sum + duration;
-      }, 0) / endedSessions.length)
-    : 0;
-
-  const stats: Array<{
-    title: string;
-    value: string;
-    icon: typeof DollarSign;
-    trend: string;
-    color: "accent" | "primary" | "success";
-  }> = [
-    { title: "Today's Revenue", value: `₹${todayRevenue.toLocaleString()}`, icon: DollarSign, trend: "Real-time", color: "accent" },
-    { title: "Active Tables", value: `${activeTables}/${totalTables}`, icon: Clock, trend: `${Math.round((activeTables/totalTables)*100)}% occupied`, color: "primary" },
-    { title: "Customers Today", value: customersToday.toString(), icon: Users, trend: "Real-time count", color: "success" },
-    { title: "Avg. Session Time", value: `${avgSessionTime} min`, icon: TrendingUp, trend: "Real-time avg", color: "primary" },
-  ];
 
   return (
     <div className="min-h-screen bg-background p-3 sm:p-4 md:p-6 lg:p-8">
@@ -298,13 +272,6 @@ const Dashboard = () => {
             <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
             Live Dashboard
           </div>
-        </div>
-
-        {/* Stats Grid */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-          {stats.map((stat, index) => (
-            <StatCard key={index} {...stat} />
-          ))}
         </div>
 
         {/* Active Sessions & Quick Actions */}

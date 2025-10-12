@@ -11,7 +11,7 @@ import { ArrowLeft, User, Phone, Mail, Plus, Search, Eye, Edit, Trash2, Calendar
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { usePlayers, Player } from "@/hooks/usePlayers";
-import { usePlayerTransactions } from "@/hooks/usePlayerTransactions";
+import { usePlayerTransactions, Transaction } from "@/hooks/usePlayerTransactions";
 import { useTransactions } from "@/hooks/useTransactions";
 import { usePendingPayments } from "@/hooks/usePendingPayments";
 import { useEndedSessions } from "@/hooks/useEndedSessions";
@@ -603,7 +603,7 @@ const PlayerDetails = ({ player }: { player: Player }) => {
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
   const [markPaidDialogOpen, setMarkPaidDialogOpen] = useState(false);
   const [transactionDialogOpen, setTransactionDialogOpen] = useState(false);
-  const [selectedTransaction, setSelectedTransaction] = useState<any>(null);
+  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
   const [paymentAmount, setPaymentAmount] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("");
   const [selectedPendingPayment, setSelectedPendingPayment] = useState<string | null>(null);
@@ -613,7 +613,7 @@ const PlayerDetails = ({ player }: { player: Player }) => {
   const [toDate, setToDate] = useState("");
 
   // Helper function to calculate table cost vs items cost
-  const calculateCostBreakdown = (transaction: any) => {
+  const calculateCostBreakdown = (transaction: Transaction) => {
     if (!transaction.items || transaction.items.length === 0) {
       return {
         tableCost: transaction.amount,
@@ -622,7 +622,7 @@ const PlayerDetails = ({ player }: { player: Player }) => {
       };
     }
 
-    const itemsTotal = transaction.items.reduce((sum: number, item: any) =>
+    const itemsTotal = transaction.items.reduce((sum: number, item: { name: string; price: number; quantity: number }) =>
       sum + (item.price * item.quantity), 0
     );
     const tableCost = transaction.amount - itemsTotal;
@@ -694,7 +694,7 @@ const PlayerDetails = ({ player }: { player: Player }) => {
           playerId: player.id,
           playerName: player.name,
           amount,
-          paymentMethod: (paymentMethod as any) || 'cash',
+          paymentMethod: (paymentMethod as 'cash' | 'card' | 'upi' | 'bank_transfer' | 'other') || 'cash',
           description: `Payment received`,
           transactionType: 'payment',
           timestamp: Date.now()
@@ -1409,7 +1409,7 @@ const PlayerDetails = ({ player }: { player: Player }) => {
                 <div>
                   <Label className="text-foreground">Items Ordered</Label>
                   <div className="space-y-1">
-                    {selectedTransaction.items.map((item: any, index: number) => (
+                    {selectedTransaction.items.map((item: { name: string; price: number; quantity: number }, index: number) => (
                       <div key={index} className="text-sm text-muted-foreground flex justify-between">
                         <span>{item.name} x{item.quantity}</span>
                         <span>₹{(item.price * item.quantity).toLocaleString()}</span>
